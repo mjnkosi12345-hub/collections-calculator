@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Arrangement Calculator — Collections</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500;600&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0f1419;
+    --paper: #f4f1ea;
+    --paper-deep: #ebe6d9;
+    --rule: #1a1f24;
+    --accent: #c8513a;
+    --accent-deep: #9c3d2a;
+    --muted: #6b6357;
+    --gold: #b8923a;
+    --success: #2d5e3f;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Inter Tight', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body {
+    background-image:
+      radial-gradient(circle at 15% 20%, rgba(200,81,58,0.06) 0%, transparent 40%),
+      radial-gradient(circle at 85% 80%, rgba(184,146,58,0.05) 0%, transparent 40%),
+      url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.04 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    padding: 32px 20px 60px;
+  }
+
+  .frame {
+    max-width: 920px;
+    margin: 0 auto;
+  }
+
+  /* Masthead */
+  .masthead {
+    border-top: 3px solid var(--ink);
+    border-bottom: 1px solid var(--ink);
+    padding: 14px 0 12px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .masthead .meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+  }
+  .masthead .meta strong { color: var(--ink); font-weight: 600; }
+
+  /* Title block */
+  .title-block {
+    padding: 38px 0 28px;
+    border-bottom: 1px solid var(--ink);
+    position: relative;
+  }
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .eyebrow::before {
+    content: '';
+    width: 24px;
+    height: 1px;
+    background: var(--accent);
+  }
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: clamp(42px, 6vw, 68px);
+    line-height: 0.95;
+    letter-spacing: -0.025em;
+    font-variation-settings: 'opsz' 144;
+  }
+  h1 em {
+    font-style: italic;
+    font-weight: 400;
+    color: var(--accent);
+  }
+  .lede {
+    margin-top: 18px;
+    font-size: 15px;
+    color: var(--muted);
+    max-width: 540px;
+    line-height: 1.5;
+  }
+
+  /* Main grid */
+  .workspace {
+    display: grid;
+    grid-template-columns: 1fr 1.15fr;
+    gap: 0;
+    margin-top: 0;
+    border-bottom: 1px solid var(--ink);
+  }
+  @media (max-width: 760px) {
+    .workspace { grid-template-columns: 1fr; }
+  }
+
+  .input-pane {
+    padding: 36px 32px 36px 0;
+    border-right: 1px solid var(--ink);
+  }
+  @media (max-width: 760px) {
+    .input-pane {
+      padding: 32px 0;
+      border-right: none;
+      border-bottom: 1px solid var(--ink);
+    }
+  }
+
+  .output-pane {
+    padding: 36px 0 36px 32px;
+    background: linear-gradient(180deg, transparent, rgba(15,20,25,0.02));
+  }
+  @media (max-width: 760px) {
+    .output-pane { padding: 32px 0 0; }
+  }
+
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 22px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .section-label .num {
+    background: var(--ink);
+    color: var(--paper);
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 10px;
+    font-weight: 600;
+  }
+
+  /* Form */
+  .field {
+    margin-bottom: 26px;
+  }
+  .field label {
+    display: block;
+    font-family: 'Fraunces', serif;
+    font-size: 18px;
+    font-weight: 500;
+    margin-bottom: 6px;
+    letter-spacing: -0.01em;
+  }
+  .field .hint {
+    font-size: 12.5px;
+    color: var(--muted);
+    margin-bottom: 12px;
+    font-style: italic;
+  }
+  .input-wrap {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    border-bottom: 2px solid var(--ink);
+    transition: border-color 0.2s;
+  }
+  .input-wrap:focus-within {
+    border-color: var(--accent);
+  }
+  .input-wrap .prefix {
+    font-family: 'Fraunces', serif;
+    font-size: 28px;
+    font-weight: 500;
+    color: var(--muted);
+    padding-right: 8px;
+    align-self: flex-end;
+    padding-bottom: 6px;
+  }
+  .input-wrap input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-family: 'Fraunces', serif;
+    font-size: 32px;
+    font-weight: 500;
+    color: var(--ink);
+    padding: 8px 0;
+    outline: none;
+    letter-spacing: -0.02em;
+    font-variation-settings: 'opsz' 144;
+    width: 100%;
+    min-width: 0;
+  }
+  .input-wrap input::placeholder { color: rgba(107,99,87,0.4); }
+  .input-wrap .suffix {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    align-self: flex-end;
+    padding-bottom: 12px;
+  }
+
+  .error-msg {
+    color: var(--accent-deep);
+    font-size: 12px;
+    margin-top: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    min-height: 16px;
+    display: block;
+  }
+
+  .actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 32px;
+  }
+  button.primary {
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    padding: 16px 28px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+  }
+  button.primary:hover {
+    background: var(--accent);
+  }
+  button.secondary {
+    background: transparent;
+    color: var(--ink);
+    border: 1px solid var(--ink);
+    padding: 16px 22px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  button.secondary:hover {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  /* Output */
+  .output-empty {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    color: var(--muted);
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 17px;
+    line-height: 1.5;
+    min-height: 280px;
+  }
+  .output-empty .deco {
+    font-size: 48px;
+    margin-bottom: 16px;
+    color: var(--paper-deep);
+    font-style: normal;
+  }
+
+  .result {
+    display: none;
+  }
+  .result.visible {
+    display: block;
+    animation: fadeUp 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .headline-figure {
+    margin-bottom: 28px;
+    padding-bottom: 24px;
+    border-bottom: 1px dashed rgba(15,20,25,0.2);
+  }
+  .headline-figure .label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .headline-figure .amount {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(48px, 8vw, 72px);
+    font-weight: 500;
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+    font-variation-settings: 'opsz' 144;
+  }
+  .headline-figure .amount .currency {
+    color: var(--accent);
+    font-style: italic;
+    font-weight: 400;
+    margin-right: 4px;
+  }
+  .headline-figure .per {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--muted);
+    margin-top: 10px;
+  }
+
+  .detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(15,20,25,0.08);
+    gap: 16px;
+  }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-row .key {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+    flex-shrink: 0;
+  }
+  .detail-row .val {
+    font-family: 'Fraunces', serif;
+    font-size: 17px;
+    font-weight: 500;
+    text-align: right;
+    letter-spacing: -0.01em;
+  }
+  .detail-row .val.highlight {
+    color: var(--accent-deep);
+  }
+
+  /* Footer */
+  .footer-note {
+    margin-top: 24px;
+    padding-top: 18px;
+    border-top: 1px solid var(--ink);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  /* Decorative ornament */
+  .ornament {
+    text-align: center;
+    margin: 24px 0 0;
+    color: var(--paper-deep);
+    font-size: 14px;
+    letter-spacing: 0.6em;
+  }
+</style>
+</head>
+<body>
+  <div class="frame">
+
+    <header class="masthead">
+      <div class="meta">Collections Dept. &middot; <strong>Arrangement Tool</strong></div>
+      <div class="meta">Today &middot; <strong id="todayDisplay">—</strong></div>
+    </header>
+
+    <section class="title-block">
+      <div class="eyebrow">Installment Calculator &middot; v1.0</div>
+      <h1>Arrears, <em>arranged.</em></h1>
+      <p class="lede">Enter the outstanding arrears and the number of monthly installments. The tool returns the per-payment amount and the full arrangement window.</p>
+    </section>
+
+    <section class="workspace">
+
+      <div class="input-pane">
+        <div class="section-label"><span class="num">1</span> Inputs</div>
+
+        <div class="field">
+          <label for="arrears">Arrears Amount</label>
+          <div class="hint">The total outstanding balance owed.</div>
+          <div class="input-wrap">
+            <span class="prefix">R</span>
+            <input type="text" id="arrears" inputmode="decimal" placeholder="0.00" autocomplete="off" />
+            <span class="suffix">ZAR</span>
+          </div>
+          <span class="error-msg" id="arrearsError"></span>
+        </div>
+
+        <div class="field">
+          <label for="installments">Number of Installments</label>
+          <div class="hint">How many monthly payments will the tenant make?</div>
+          <div class="input-wrap">
+            <input type="number" id="installments" min="1" step="1" placeholder="0" autocomplete="off" />
+            <span class="suffix">months</span>
+          </div>
+          <span class="error-msg" id="installmentsError"></span>
+        </div>
+
+        <div class="actions">
+          <button class="primary" id="calcBtn">Calculate</button>
+          <button class="secondary" id="resetBtn">Reset</button>
+        </div>
+      </div>
+
+      <div class="output-pane">
+        <div class="section-label"><span class="num">2</span> Arrangement</div>
+
+        <div class="output-empty" id="emptyState">
+          <div class="deco">⌁</div>
+          Awaiting inputs. Once submitted, the monthly installment, first payment date, and final payment date will appear here.
+        </div>
+
+        <div class="result" id="result">
+          <div class="headline-figure">
+            <div class="label">Monthly Installment</div>
+            <div class="amount"><span class="currency">R</span><span id="installmentAmount">0.00</span></div>
+            <div class="per">payable on the last day of each month</div>
+          </div>
+
+          <div class="detail-row">
+            <span class="key">Total Arrears</span>
+            <span class="val">R <span id="outArrears">0.00</span></span>
+          </div>
+          <div class="detail-row">
+            <span class="key">No. of Payments</span>
+            <span class="val"><span id="outInstallments">0</span></span>
+          </div>
+          <div class="detail-row">
+            <span class="key">First Payment</span>
+            <span class="val highlight" id="outStart">—</span>
+          </div>
+          <div class="detail-row">
+            <span class="key">Final Payment</span>
+            <span class="val highlight" id="outEnd">—</span>
+          </div>
+          <div class="detail-row">
+            <span class="key">Arrangement Period</span>
+            <span class="val" id="outDuration">—</span>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <div class="ornament">✦ &nbsp;✦ &nbsp;✦</div>
+
+    <footer class="footer-note">
+      <span>For internal use &middot; Collections Department</span>
+      <span id="generatedStamp">—</span>
+    </footer>
+
+  </div>
+
+<script>
+  // ---------- Date helpers ----------
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  function lastDayOfMonth(year, monthIndex) {
+    // monthIndex is 0-based. Day 0 of next month = last day of this month.
+    return new Date(year, monthIndex + 1, 0);
+  }
+
+  function formatDate(d) {
+    const day = d.getDate();
+    const month = MONTHS[d.getMonth()];
+    const year = d.getFullYear();
+    // ordinal suffix
+    const j = day % 10, k = day % 100;
+    let suffix = 'th';
+    if (j === 1 && k !== 11) suffix = 'st';
+    else if (j === 2 && k !== 12) suffix = 'nd';
+    else if (j === 3 && k !== 13) suffix = 'rd';
+    return `${day}${suffix} ${month} ${year}`;
+  }
+
+  function formatToday(d) {
+    const day = d.getDate();
+    const month = MONTHS[d.getMonth()].slice(0,3);
+    return `${day} ${month} ${d.getFullYear()}`;
+  }
+
+  function formatMoney(n) {
+    return n.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  // ---------- Today stamp ----------
+  const today = new Date();
+  document.getElementById('todayDisplay').textContent = formatToday(today);
+  document.getElementById('generatedStamp').textContent = 'Loaded ' + formatToday(today);
+
+  // ---------- Inputs ----------
+  const arrearsInput = document.getElementById('arrears');
+  const installmentsInput = document.getElementById('installments');
+  const arrearsError = document.getElementById('arrearsError');
+  const installmentsError = document.getElementById('installmentsError');
+
+  // Live formatting for arrears: allow digits and one decimal point, add thousands separators
+  arrearsInput.addEventListener('input', (e) => {
+    let v = e.target.value.replace(/[^\d.]/g, '');
+    const parts = v.split('.');
+    if (parts.length > 2) v = parts[0] + '.' + parts.slice(1).join('');
+    let [intPart, decPart] = v.split('.');
+    if (intPart) {
+      intPart = intPart.replace(/^0+(?=\d)/, '');
+      intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+    e.target.value = decPart !== undefined ? `${intPart}.${decPart.slice(0,2)}` : intPart;
+    arrearsError.textContent = '';
+  });
+
+  installmentsInput.addEventListener('input', () => { installmentsError.textContent = ''; });
+
+  // ---------- Core calculation ----------
+  function calculate() {
+    arrearsError.textContent = '';
+    installmentsError.textContent = '';
+
+    const rawArrears = arrearsInput.value.replace(/,/g, '').trim();
+    const arrears = parseFloat(rawArrears);
+    const installments = parseInt(installmentsInput.value, 10);
+
+    let valid = true;
+    if (!rawArrears || isNaN(arrears) || arrears <= 0) {
+      arrearsError.textContent = '→ Enter a valid arrears amount';
+      valid = false;
+    }
+    if (!installmentsInput.value || isNaN(installments) || installments < 1) {
+      installmentsError.textContent = '→ Enter at least 1 installment';
+      valid = false;
+    }
+    if (!valid) return;
+
+    const now = new Date();
+    const year = now.getFullYear();
+    const monthIdx = now.getMonth();
+
+    // First payment = last day of current month
+    const startDate = lastDayOfMonth(year, monthIdx);
+    // Final payment = last day of (current month + installments - 1)
+    const endDate = lastDayOfMonth(year, monthIdx + installments - 1);
+
+    const installmentAmount = arrears / installments;
+
+    // Render results
+    document.getElementById('emptyState').style.display = 'none';
+    const resultBox = document.getElementById('result');
+    resultBox.classList.remove('visible');
+    void resultBox.offsetWidth; // restart animation
+    resultBox.classList.add('visible');
+
+    document.getElementById('installmentAmount').textContent = formatMoney(installmentAmount);
+    document.getElementById('outArrears').textContent = formatMoney(arrears);
+    document.getElementById('outInstallments').textContent = installments + (installments === 1 ? ' payment' : ' payments');
+    document.getElementById('outStart').textContent = formatDate(startDate);
+    document.getElementById('outEnd').textContent = formatDate(endDate);
+    document.getElementById('outDuration').textContent = installments + (installments === 1 ? ' month' : ' months');
+  }
+
+  function reset() {
+    arrearsInput.value = '';
+    installmentsInput.value = '';
+    arrearsError.textContent = '';
+    installmentsError.textContent = '';
+    document.getElementById('result').classList.remove('visible');
+    document.getElementById('emptyState').style.display = 'flex';
+    arrearsInput.focus();
+  }
+
+  document.getElementById('calcBtn').addEventListener('click', calculate);
+  document.getElementById('resetBtn').addEventListener('click', reset);
+
+  // Enter key triggers calculation
+  [arrearsInput, installmentsInput].forEach(el => {
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') calculate();
+    });
+  });
+</script>
+</body>
+</html>
